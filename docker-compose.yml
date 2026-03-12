@@ -25,7 +25,7 @@ services:
       SERVE_UI: "true"
       PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
       PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
-      PAPERCLIP_PUBLIC_URL: "https://zone.flyworksuite.com"
+      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-https://zone.flyworksuite.com}"
       volumes:
       - paperclip-data:/paperclip
     depends_on:
