@@ -6,33 +6,57 @@ services:
       POSTGRES_PASSWORD: paperclip
       POSTGRES_DB: paperclip
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U paperclip -d paperclip"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U paperclip -d paperclip
       interval: 2s
       timeout: 5s
       retries: 30
     ports:
-      - "5432:5432"
+      - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
-
   server:
     build: .
     ports:
-      - "3100:3100"
+      - 3100:3100
     environment:
       DATABASE_URL: postgres://paperclip:paperclip@db:5432/paperclip
       PORT: "3100"
       SERVE_UI: "true"
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
-      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-https://zone.flyworksuite.com}"
-      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+      PAPERCLIP_DEPLOYMENT_MODE: authenticated
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: private
+      PAPERCLIP_PUBLIC_URL: ${PAPERCLIP_PUBLIC_URL:-https://zone.flyworksuite.com}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}
     volumes:
       - paperclip-data:/paperclip
+      - /root/d4d-workflows:/workspace/d4d-workflows
+      - /root/fly-homepage:/workspace/fly-homepage
+      - /root/opencode-agents:/workspace/opencode-agents
+      - /root/opencode-workspaces:/workspace/opencode-workspaces
+      - /root/prospecting-system:/workspace/prospecting-system
     depends_on:
       db:
         condition: service_healthy
-
+    labels:
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.zone-zone-vsu4hu-6-web.rule=Host(`zone.flyworksuite.com`)
+      - traefik.http.routers.zone-zone-vsu4hu-6-web.entrypoints=web
+      - traefik.http.services.zone-zone-vsu4hu-6-web.loadbalancer.server.port=3100
+      - traefik.http.routers.zone-zone-vsu4hu-6-web.service=zone-zone-vsu4hu-6-web
+      - traefik.http.routers.zone-zone-vsu4hu-6-web.middlewares=redirect-to-https@file
+      - traefik.http.routers.zone-zone-vsu4hu-6-websecure.rule=Host(`zone.flyworksuite.com`)
+      - traefik.http.routers.zone-zone-vsu4hu-6-websecure.entrypoints=websecure
+      - traefik.http.services.zone-zone-vsu4hu-6-websecure.loadbalancer.server.port=3100
+      - traefik.http.routers.zone-zone-vsu4hu-6-websecure.service=zone-zone-vsu4hu-6-websecure
+      - traefik.http.routers.zone-zone-vsu4hu-6-websecure.tls.certresolver=letsencrypt
+      - traefik.enable=true
+    networks:
+      - dokploy-network
+      - default
 volumes:
-  pgdata:
-  paperclip-data:
+  pgdata: null
+  paperclip-data: null
+networks:
+  dokploy-network:
+    external: true
